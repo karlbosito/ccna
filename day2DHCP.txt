@@ -1,0 +1,184 @@
+GenericConfigTAB:
+config target
+vlan 25
+name: ___.com
+int vlan 25
+no shutdown
+ip address 10.0._._ 255.255._.__
+ip dhcp Excluded-address 10.0._._ 10.0._.__
+ip dhcp pool ___.com
+    network 10.0._._ 255.255._.__
+    default-router 10.0._.__
+    domain-name ___.com
+    dns-server 10.m.1.10
+    option 150 ip 10.m.100.8
+int fa 0/5 
+    switchport access vlan 25
+
+for NSO.gov.ph 
+config target
+vlan 25
+name: NSO.GOV.PH
+int vlan 25
+no shutdown
+ip address 10.0.0.65 255.255.255.192
+ip dhcp Excluded-address 10.0.0.65 10.0.0.69
+ip dhcp pool NSO.GOV.PH 
+    network 10.0.0.64 255.255.255.192
+    default-router 10.0.0.65
+    domain-name NSO.GOV.PH
+    dns-server 10.41.1.10
+    option 150 ip 10.41.100.8
+int fa 0/5 
+    switchport access vlan 25
+
+@@@@@@@@
+ex1: Design and Configure a Callcenter for PNP.GOV.PH with 210 RESPONDERSAgents, TL's, PM's.
+using 10.0.0.0/8. user rivan Method: "C.S.I"
+C = 210 is 8bits
+S = /32bits - /8bits = 24 bits (3rd Octet, 1i)
+ipasok sa 1i sa 3rd 
+PNP.GOV.PH: 10.0.1.0 /24
+1st: 10.0.1.1 
+Lastusable: 10.0.1.254
+Broadcast: 10.0.1.255
+Not PNP: 10.0.2.0 /24
+
+@@@Inside the switch 
+
+config target
+vlan 25
+name PNP.GOV.PH
+int vlan 25
+no shutdown
+ip address 10.0.1.255 255.255.255.0
+ip dhcp Excluded-address 10.0.1.1 10.0.1.20
+ip dhcp pool PNP.GOV.PH 
+    network 10.0.1.0 255.255.255.0
+    default-router 10.0.1.1
+    domain-name PNP.GOV.PH
+    dns-server 10.41.1.10
+    option 150 ip 10.41.100.8
+int fa 0/5 
+    switchport access vlan 25
+---------------------------------------------------------------------------------
+@@@@@@@@@@@
+ex2: Design and Configure a Callcenter for ETELECARE.com with 4800 RESPONDERSAgents, TL's, PM's.
+using 10.0.0.0/8. user rivan Method: "C.S.I"
+C =4800 is 13bits
+S = /32bits - /13bits = 19bits (3rd Octet, 32i)
+ipasok sa 32i sa 3rd 
+ETELECARE: 10.0.32.0 /19bits 
+1st: 10.0.32.1 (10.0.32.0/19 + 1)
+Lastusable: 10.0.63.254
+Broadcast: 10.0.63.255
+Not ETELECARE: 10.0.64.0 /19bits
+
+@@@Inside the switch 
+
+config target
+vlan 25
+name ETELECARE
+int vlan 25
+no shutdown
+ip address 10.0.32.1 255.255.224.0
+ip dhcp Excluded-address 10.0.32.1 10.0.32.100
+ip dhcp pool ETELECARE
+    network 10.0.32.0 255.255.254.0
+    default-router 10.0.31.1
+    domain-name ETELECARE
+    dns-server 10.41.1.10
+    option 150 ip 10.41.100.8
+int fa 0/5 
+    switchport access vlan 25
+------------------------------------------------------------------------------
+@@@@@@@@@@@
+ex2: Design and Configure a Callcenter for CARITAS.ORG with 350 Volunteers.
+using 10.0.0.0/8. user rivan Method: "C.S.I"
+C = 350 is 9bits
+S = /32bits - /9bits = 23bits (2nd, 2i)
+ipasok sa 2i sa 2nd 
+ETELECARE: 10.0.2.0 /9bits 
+1st: 10.0.2.1 (10.0.2.0/9 + 1)
+Lastusable: 10.0.4.255
+Broadcast: 10.0.4.254
+Not ETELECARE: 10.0.4.0 /9bits
+
+
+TASK: STATIC ROUTING (1  by 1 putting ip)
+
+
+@p1
+config target
+int e0/0
+ip add 10.2.1.101 255.255.255.0
+no shut
+
+@p2
+config target
+int e0/1
+ip add 10.2.1.102 255.255.255.0
+no shut
+
+Lipat VLAN 10 sa a1/a2
+
+@a1
+config terminal
+int e0/0
+switchport access vlan 10
+
+@a2
+config terminal
+int e1/0
+switchport access vlan 10
+
+ P1:  10.1.4.4/30 10.2.2.0/24 192.168.1.128/27 gw: 10.2.1.1
+ P2:  10.1.4.4/30 10.2.2.0/24 192.168.1.128/27 gw: 10.2.1.2
+
+ @p1
+ config terminal
+ ip route 10.1.4.4 255.255.255.252 10.2.1.1
+ ip route 10.2.2.0 255.255.255.0 10.2.1.1
+ ip route 192.168.1.128 255.255.255.224 10.2.1.1
+do ping 10.2.2.1
+do ping 192.168.1.129
+
+
+ @p2
+ configure terminal
+ ip route 10.1.4.4 255.255.255.252 10.2.1.2
+ ip route 10.2.2.0 255.255.255.0 10.2.1.2
+ ip route 192.168.1.128 255.255.255.224 10.2.1.2
+do ping 10.2.2.1
+do ping 192.168.1.129
+
+TASK: DEFAULT ROUTING on p1 & p2
+
+ @p1
+ config terminal
+ no ip route 10.1.4.4 255.255.255.252 10.2.1.1
+ no ip route 10.2.2.0 255.255.255.0 10.2.1.1
+ no ip route 192.168.1.128 255.255.255.224 10.2.1.1
+ip route 0.0.0.0 0.0.0.0 10.2.1.1
+do sh ip route static
+
+ ip route 10.1.4.4 255.255.255.252 10.2.1.1
+ ip route 10.2.2.0 255.255.255.0 10.2.1.1
+ ip route 192.168.1.128 255.255.255.224 10.2.1.1
+no ip route 0.0.0.0 0.0.0.0 10.2.1.1
+
+
+
+ @p2
+ configure terminal
+no ip route 10.1.4.4 255.255.255.252 10.2.1.2
+no ip route 10.2.2.0 255.255.255.0 10.2.1.2
+no ip route 192.168.1.128 255.255.255.224 10.2.1.2
+ip route 0.0.0.0 0.0.0.0 10.2.1.2
+do sh ip route static
+
+
+ip route 10.1.4.4 255.255.255.252 10.2.1.2
+ip route 10.2.2.0 255.255.255.0 10.2.1.2
+ip route 192.168.1.128 255.255.255.224 10.2.1.2
+no ip route 0.0.0.0 0.0.0.0 10.2.1.2
